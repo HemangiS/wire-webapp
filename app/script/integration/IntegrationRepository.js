@@ -86,7 +86,7 @@ z.integration.IntegrationRepository = class IntegrationRepository {
     if (this.isTeam()) {
       this.getServiceById(providerId, serviceId).then(serviceEntity => {
         amplify.publish(z.event.WebApp.WARNING.MODAL, z.ViewModel.ModalType.BOTS_CONFIRM, {
-          action: () => this.createConversationWithService(serviceEntity),
+          action: () => this.createConversationWithService(serviceEntity, 'url_param'),
           data: serviceEntity.name,
         });
       });
@@ -96,21 +96,21 @@ z.integration.IntegrationRepository = class IntegrationRepository {
   /**
    * Add bot to conversation.
    * @param {z.integration.ServiceEntity} serviceEntity - Information about service to be added
+   * @param {string} methodName - Method used to add service
    * @returns {Promise} Resolves when integration was added to conversation
    */
-  createConversationWithService(serviceEntity) {
-    return Promise.resolve()
-      .then(() => this.conversationRepository.create_new_conversation([], serviceEntity.name))
+  createConversationWithService(serviceEntity, methodName) {
+    let conversation;
+    return this.conversationRepository
+      .create_new_conversation([], serviceEntity.name)
       .then(conversationEntity => {
         if (conversationEntity) {
-          this.addService(conversationEntity, serviceEntity, 'url_param');
+          conversation = conversationEntity;
+          return this.addService(conversation, serviceEntity, methodName);
         }
-        return conversationEntity;
       })
-      .then(conversationEntity => {
-        if (conversationEntity) {
-          amplify.publish(z.event.WebApp.CONVERSATION.SHOW, conversationEntity);
-        }
+      .then(() => {
+        amplify.publish(z.event.WebApp.CONVERSATION.SHOW, conversation);
       })
       .catch(error => {
         amplify.publish(z.event.WebApp.WARNING.MODAL, z.ViewModel.ModalType.BOTS_UNAVAILABLE);
@@ -135,7 +135,7 @@ z.integration.IntegrationRepository = class IntegrationRepository {
   }
 
   getServices(tags, start) {
-    const tagsArray = _.isArray(tags) ? tags.slice(0, 3) : [z.integration.ServiceTag.TUTORIAL];
+    const tagsArray = _.isArray(tags) ? tags.slice(0, 3) : [z.integration.ServiceTag.INTEGRATION];
 
     return this.integrationService.getServices(tagsArray.join(','), start).then(({services}) => {
       if (services.length) {

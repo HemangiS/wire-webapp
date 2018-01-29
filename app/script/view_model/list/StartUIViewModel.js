@@ -411,7 +411,7 @@ z.ViewModel.list.StartUIViewModel = class StartUIViewModel {
   }
 
   clickOnCreateServiceConversation() {
-    this.integrationRepository.createConversationWithService(this.user_profile());
+    this.integrationRepository.createConversationWithService(this.user_profile(), 'start_ui');
     if (this.user_bubble) {
       this.user_bubble.hide();
     }
